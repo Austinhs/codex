@@ -1159,9 +1159,11 @@ See the Codex keymap documentation for supported actions and examples."
                     self.chat_widget.pre_draw_tick();
                     let desired_height =
                         self.chat_widget.desired_height(tui.terminal.size()?.width);
+                    let mut rendered_area = Rect::default();
                     if terminal_resize_reflow_enabled {
                         tui.draw_with_resize_reflow(desired_height, |frame| {
                             let area = frame.area();
+                            rendered_area = area;
                             self.chat_widget.render(area, frame.buffer);
                             if let Some((x, y)) = self.chat_widget.cursor_pos(area) {
                                 frame.set_cursor_style(self.chat_widget.cursor_style(area));
@@ -1171,6 +1173,7 @@ See the Codex keymap documentation for supported actions and examples."
                     } else {
                         tui.draw(desired_height, |frame| {
                             let area = frame.area();
+                            rendered_area = area;
                             self.chat_widget.render(area, frame.buffer);
                             if let Some((x, y)) = self.chat_widget.cursor_pos(area) {
                                 frame.set_cursor_style(self.chat_widget.cursor_style(area));
@@ -1187,7 +1190,8 @@ See the Codex keymap documentation for supported actions and examples."
                             terminal_size.height,
                         );
                         tui.draw_ambient_pet_image(
-                            self.chat_widget.ambient_pet_draw(ambient_pet_area),
+                            self.chat_widget
+                                .ambient_pet_draw(ambient_pet_area, rendered_area.bottom()),
                         )?;
                     }
                     if self.chat_widget.external_editor_state() == ExternalEditorState::Requested {
