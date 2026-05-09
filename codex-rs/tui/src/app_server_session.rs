@@ -1055,6 +1055,7 @@ fn model_preset_from_api_model(model: ApiModel) -> ModelPreset {
                 description: service_tier.description,
             })
             .collect(),
+        default_service_tier: None,
         is_default: model.is_default,
         upgrade,
         show_in_picker: !model.hidden,

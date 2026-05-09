@@ -1,5 +1,6 @@
 use super::*;
 use crate::bottom_pane::slash_commands::ServiceTierCommand;
+use codex_protocol::openai_models::SERVICE_TIER_DEFAULT;
 use pretty_assertions::assert_eq;
 
 fn fast_tier_command() -> ServiceTierCommand {
@@ -2008,18 +2009,20 @@ async fn user_turn_sends_standard_override_after_fast_is_turned_off() {
         events.iter().any(|event| matches!(
             event,
             AppEvent::CodexOp(Op::OverrideTurnContext {
-                service_tier: Some(None),
+                service_tier: Some(Some(service_tier)),
                 ..
-            })
+            }) if service_tier == SERVICE_TIER_DEFAULT
         )),
-        "expected fast-mode off override app event; events: {events:?}"
+        "expected fast-mode off default service tier app event; events: {events:?}"
     );
     assert!(
         events.iter().any(|event| matches!(
             event,
-            AppEvent::PersistServiceTierSelection { service_tier: None }
+            AppEvent::PersistServiceTierSelection {
+                service_tier: Some(service_tier)
+            } if service_tier == SERVICE_TIER_DEFAULT
         )),
-        "expected fast-mode opt-out persistence app event; events: {events:?}"
+        "expected default service tier persistence app event; events: {events:?}"
     );
 
     chat.bottom_pane
@@ -2028,10 +2031,10 @@ async fn user_turn_sends_standard_override_after_fast_is_turned_off() {
 
     match next_submit_op(&mut op_rx) {
         Op::UserTurn {
-            service_tier: Some(None),
+            service_tier: Some(Some(service_tier)),
             ..
-        } => {}
-        other => panic!("expected Op::UserTurn with standard service tier override, got {other:?}"),
+        } if service_tier == SERVICE_TIER_DEFAULT => {}
+        other => panic!("expected Op::UserTurn with default service tier override, got {other:?}"),
     }
 }
 

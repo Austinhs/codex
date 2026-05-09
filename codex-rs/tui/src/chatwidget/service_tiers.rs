@@ -6,6 +6,7 @@ use crate::app_event::AppEvent;
 use crate::bottom_pane::slash_commands::ServiceTierCommand;
 use codex_features::Feature;
 use codex_protocol::config_types::ServiceTier;
+use codex_protocol::openai_models::SERVICE_TIER_DEFAULT;
 use codex_protocol::openai_models::SPEED_TIER_FAST;
 
 impl ChatWidget {
@@ -50,7 +51,7 @@ impl ChatWidget {
             return;
         };
         let next_tier = if self.current_service_tier() == Some(fast_tier.id.as_str()) {
-            None
+            Some(SERVICE_TIER_DEFAULT.to_string())
         } else {
             Some(fast_tier.id)
         };
@@ -59,7 +60,7 @@ impl ChatWidget {
 
     pub(crate) fn toggle_service_tier_from_ui(&mut self, command: ServiceTierCommand) {
         let next_tier = if self.current_service_tier() == Some(command.id.as_str()) {
-            None
+            Some(SERVICE_TIER_DEFAULT.to_string())
         } else {
             Some(command.id)
         };

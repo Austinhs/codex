@@ -383,6 +383,7 @@ use codex_protocol::models::PermissionProfile;
 use codex_protocol::openai_models::InputModality;
 use codex_protocol::openai_models::ModelPreset;
 use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use codex_protocol::openai_models::SERVICE_TIER_DEFAULT;
 use codex_protocol::plan_tool::StepStatus;
 use codex_protocol::plan_tool::UpdatePlanArgs;
 use codex_utils_approval_presets::ApprovalPreset;
@@ -5745,7 +5746,9 @@ impl ChatWidget {
             .filter(|_| self.current_model_supports_personality());
         let service_tier = match self.config.service_tier.clone() {
             Some(service_tier) => Some(Some(service_tier)),
-            None if self.config.notices.fast_default_opt_out == Some(true) => Some(None),
+            None if self.config.notices.fast_default_opt_out == Some(true) => {
+                Some(Some(SERVICE_TIER_DEFAULT.to_string()))
+            }
             None => None,
         };
         let permission_profile = self.config.permissions.permission_profile();
