@@ -41,7 +41,7 @@ use codex_protocol::models::FunctionCallOutputPayload;
 use codex_protocol::models::PermissionProfile;
 use codex_protocol::models::SandboxEnforcement;
 use codex_protocol::openai_models::ModelServiceTier;
-use codex_protocol::openai_models::SERVICE_TIER_DEFAULT;
+use codex_protocol::openai_models::SERVICE_TIER_UNSET;
 use codex_protocol::permissions::FileSystemAccessMode;
 use codex_protocol::permissions::FileSystemPath;
 use codex_protocol::permissions::FileSystemSandboxEntry;
@@ -3048,7 +3048,7 @@ fn get_service_tier_respects_fast_default_opt_out_when_service_tier_unset() {
             /*fast_default_opt_out*/ true,
             &model_info,
         ),
-        Some(SERVICE_TIER_DEFAULT.to_string())
+        Some(SERVICE_TIER_UNSET.to_string())
     );
 }
 

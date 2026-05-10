@@ -24,7 +24,8 @@ use codex_protocol::protocol::AskForApproval;
 pub struct ConfigProfile {
     pub model: Option<String>,
     /// Optional explicit service tier request id for new turns (for example
-    /// `priority` or `flex`; legacy `fast` also works).
+    /// `priority` or `flex`; legacy `fast` also works). Use `unset` to opt
+    /// out of the model catalog default service tier.
     pub service_tier: Option<String>,
     /// The key in the `model_providers` map identifying the
     /// [`ModelProviderInfo`] to use.

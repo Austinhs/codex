@@ -398,6 +398,7 @@ pub struct Config {
     pub model: Option<String>,
 
     /// Effective service tier request id preference for new turns.
+    /// `unset` means the user explicitly opted out of model catalog defaults.
     pub service_tier: Option<String>,
 
     /// Model used specifically for review sessions.

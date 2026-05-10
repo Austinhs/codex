@@ -22,7 +22,8 @@ use crate::config_types::Verbosity;
 
 const PERSONALITY_PLACEHOLDER: &str = "{{ personality }}";
 pub const SPEED_TIER_FAST: &str = "fast";
-pub const SERVICE_TIER_DEFAULT: &str = "default";
+/// Local config sentinel meaning "explicitly send no service tier".
+pub const SERVICE_TIER_UNSET: &str = "unset";
 
 /// See https://platform.openai.com/docs/guides/reasoning?api-mode=responses#get-started-with-reasoning
 #[derive(
@@ -503,7 +504,7 @@ impl ModelInfo {
 
     pub fn resolve_service_tier(&self, configured_service_tier: Option<String>) -> Option<String> {
         match configured_service_tier.as_deref() {
-            Some(SERVICE_TIER_DEFAULT) => configured_service_tier,
+            Some(SERVICE_TIER_UNSET) => configured_service_tier,
             Some(service_tier) if self.supports_service_tier(service_tier) => {
                 configured_service_tier
             }
@@ -516,7 +517,7 @@ impl ModelInfo {
 
     pub fn request_service_tier(&self, service_tier: Option<String>) -> Option<String> {
         self.resolve_service_tier(service_tier)
-            .filter(|service_tier| service_tier != SERVICE_TIER_DEFAULT)
+            .filter(|service_tier| service_tier != SERVICE_TIER_UNSET)
     }
 }
 
@@ -927,7 +928,7 @@ mod tests {
     }
 
     #[test]
-    fn service_tier_resolution_preserves_explicit_default_sentinel() {
+    fn service_tier_resolution_preserves_explicit_unset_sentinel() {
         let model = ModelInfo {
             default_service_tier: Some(ServiceTier::Fast.request_value().to_string()),
             service_tiers: vec![ModelServiceTier {
@@ -939,11 +940,11 @@ mod tests {
         };
 
         assert_eq!(
-            model.resolve_service_tier(Some(SERVICE_TIER_DEFAULT.to_string())),
-            Some(SERVICE_TIER_DEFAULT.to_string())
+            model.resolve_service_tier(Some(SERVICE_TIER_UNSET.to_string())),
+            Some(SERVICE_TIER_UNSET.to_string())
         );
         assert_eq!(
-            model.request_service_tier(Some(SERVICE_TIER_DEFAULT.to_string())),
+            model.request_service_tier(Some(SERVICE_TIER_UNSET.to_string())),
             None
         );
     }
