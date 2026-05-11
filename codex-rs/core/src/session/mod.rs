@@ -802,16 +802,13 @@ fn get_service_tier(
     fast_mode_enabled: bool,
     model_info: &ModelInfo,
 ) -> Option<String> {
+    if !fast_mode_enabled {
+        return None;
+    }
     if fast_default_opt_out && configured_service_tier.is_none() {
         return Some(codex_protocol::openai_models::SERVICE_TIER_UNSET.to_string());
     }
-    if fast_mode_enabled {
-        return model_info.effective_service_tier(configured_service_tier);
-    }
-    configured_service_tier.filter(|service_tier| {
-        service_tier == codex_protocol::openai_models::SERVICE_TIER_UNSET
-            || model_info.supports_service_tier(service_tier)
-    })
+    model_info.effective_service_tier(configured_service_tier)
 }
 
 #[cfg(test)]
