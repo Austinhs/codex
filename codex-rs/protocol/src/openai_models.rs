@@ -502,7 +502,10 @@ impl ModelInfo {
             .any(|tier| tier.id == service_tier)
     }
 
-    pub fn resolve_service_tier(&self, configured_service_tier: Option<String>) -> Option<String> {
+    pub fn effective_service_tier(
+        &self,
+        configured_service_tier: Option<String>,
+    ) -> Option<String> {
         match configured_service_tier.as_deref() {
             Some(SERVICE_TIER_UNSET) => configured_service_tier,
             Some(service_tier) if self.supports_service_tier(service_tier) => {
@@ -515,8 +518,8 @@ impl ModelInfo {
         }
     }
 
-    pub fn request_service_tier(&self, service_tier: Option<String>) -> Option<String> {
-        self.resolve_service_tier(service_tier)
+    pub fn service_tier_for_request(&self, service_tier: Option<String>) -> Option<String> {
+        self.effective_service_tier(service_tier)
             .filter(|service_tier| service_tier != SERVICE_TIER_UNSET)
     }
 }
@@ -918,11 +921,11 @@ mod tests {
         };
 
         assert_eq!(
-            model.resolve_service_tier(/*configured_service_tier*/ None),
+            model.effective_service_tier(/*configured_service_tier*/ None),
             Some(ServiceTier::Fast.request_value().to_string())
         );
         assert_eq!(
-            model.resolve_service_tier(Some("unsupported".to_string())),
+            model.effective_service_tier(Some("unsupported".to_string())),
             Some(ServiceTier::Fast.request_value().to_string())
         );
     }
@@ -940,11 +943,11 @@ mod tests {
         };
 
         assert_eq!(
-            model.resolve_service_tier(Some(SERVICE_TIER_UNSET.to_string())),
+            model.effective_service_tier(Some(SERVICE_TIER_UNSET.to_string())),
             Some(SERVICE_TIER_UNSET.to_string())
         );
         assert_eq!(
-            model.request_service_tier(Some(SERVICE_TIER_UNSET.to_string())),
+            model.service_tier_for_request(Some(SERVICE_TIER_UNSET.to_string())),
             None
         );
     }
@@ -958,11 +961,11 @@ mod tests {
         };
 
         assert_eq!(
-            model.resolve_service_tier(/*configured_service_tier*/ None),
+            model.effective_service_tier(/*configured_service_tier*/ None),
             None
         );
         assert_eq!(
-            model.request_service_tier(/*configured_service_tier*/ None),
+            model.service_tier_for_request(/*configured_service_tier*/ None),
             None
         );
     }

@@ -803,7 +803,7 @@ fn get_service_tier(
     if fast_default_opt_out && configured_service_tier.is_none() {
         return Some(codex_protocol::openai_models::SERVICE_TIER_UNSET.to_string());
     }
-    model_info.resolve_service_tier(configured_service_tier)
+    model_info.effective_service_tier(configured_service_tier)
 }
 
 #[cfg(test)]
