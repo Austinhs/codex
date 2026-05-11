@@ -80,6 +80,22 @@ fn project_layers_for_cwd(cwd: &Path) -> Vec<ConfigLayerEntry> {
 }
 
 async fn make_config_for_cwd(codex_home: &TempDir, cwd: PathBuf) -> TestConfig {
+    let project_layers = project_layers_for_cwd(&cwd);
+    make_config_for_cwd_with_system_config_and_project_layers(
+        codex_home,
+        cwd,
+        TomlValue::Table(toml::map::Map::new()),
+        project_layers,
+    )
+    .await
+}
+
+async fn make_config_for_cwd_with_system_config_and_project_layers(
+    codex_home: &TempDir,
+    cwd: PathBuf,
+    system_config: TomlValue,
+    project_layers: Vec<ConfigLayerEntry>,
+) -> TestConfig {
     let user_config_path = codex_home.path().join(CONFIG_TOML_FILE);
     let system_config_path = codex_home.path().join("etc/codex/config.toml");
     fs::create_dir_all(
@@ -94,7 +110,7 @@ async fn make_config_for_cwd(codex_home: &TempDir, cwd: PathBuf) -> TestConfig {
             ConfigLayerSource::System {
                 file: config_file(system_config_path),
             },
-            TomlValue::Table(toml::map::Map::new()),
+            system_config,
         ),
         ConfigLayerEntry::new(
             ConfigLayerSource::User {
@@ -103,7 +119,7 @@ async fn make_config_for_cwd(codex_home: &TempDir, cwd: PathBuf) -> TestConfig {
             TomlValue::Table(toml::map::Map::new()),
         ),
     ];
-    layers.extend(project_layers_for_cwd(&cwd));
+    layers.extend(project_layers);
 
     let cwd_abs = cwd.abs();
     TestConfig {
@@ -1726,16 +1742,26 @@ async fn non_git_repo_skills_search_does_not_walk_parents() {
     fs::create_dir_all(&nested_dir).unwrap();
 
     write_skill_at(
-        &outer_dir
-            .path()
-            .join(REPO_ROOT_CONFIG_DIR_NAME)
-            .join(SKILLS_DIR_NAME),
+        &outer_dir.path().join(AGENTS_DIR_NAME).join(SKILLS_DIR_NAME),
         "outer",
         "outer-skill",
         "from outer",
     );
 
-    let cfg = make_config_for_cwd(&codex_home, nested_dir).await;
+    let mut system_config = toml::map::Map::new();
+    system_config.insert(
+        "project_root_markers".to_string(),
+        TomlValue::Array(vec![TomlValue::String(
+            "__codex_test_project_root_marker_that_does_not_exist__".to_string(),
+        )]),
+    );
+    let cfg = make_config_for_cwd_with_system_config_and_project_layers(
+        &codex_home,
+        nested_dir,
+        TomlValue::Table(system_config),
+        Vec::new(),
+    )
+    .await;
 
     let outcome = load_skills_for_test(&cfg).await;
     assert!(

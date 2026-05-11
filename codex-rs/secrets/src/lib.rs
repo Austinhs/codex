@@ -188,12 +188,12 @@ mod tests {
 
     #[test]
     fn environment_id_fallback_has_cwd_prefix() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let env_id = environment_id_from_cwd(dir.path());
-        let canonical = dir
-            .path()
+        let cwd = PathBuf::from(std::path::MAIN_SEPARATOR.to_string())
+            .join("codex-secrets-test-missing-cwd");
+        let env_id = environment_id_from_cwd(&cwd);
+        let canonical = cwd
             .canonicalize()
-            .expect("tempdir canonical path should exist")
+            .unwrap_or_else(|_| cwd.clone())
             .to_string_lossy()
             .into_owned();
         let mut hasher = Sha256::new();
