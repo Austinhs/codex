@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use anyhow::Result;
 use anyhow::bail;
+use app_test_support::AppServerTestProcess;
 use app_test_support::ChatGptAuthFixture;
-use app_test_support::McpProcess;
 use app_test_support::to_response;
 use app_test_support::write_chatgpt_auth;
 use codex_app_server_protocol::JSONRPCResponse;
@@ -79,7 +79,7 @@ async fn plugin_list_skips_invalid_marketplace_file_and_reports_error() -> Resul
     std::fs::write(marketplace_path.as_path(), "{not json")?;
 
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_with_env(
+    let mut mcp = AppServerTestProcess::new_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -128,7 +128,7 @@ async fn plugin_list_skips_invalid_marketplace_file_and_reports_error() -> Resul
 #[tokio::test]
 async fn plugin_list_rejects_relative_cwds() -> Result<()> {
     let codex_home = TempDir::new()?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -205,7 +205,7 @@ async fn plugin_list_keeps_valid_marketplaces_when_another_marketplace_fails_to_
     std::fs::write(invalid_marketplace_path.as_path(), "{not json")?;
 
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_with_env(
+    let mut mcp = AppServerTestProcess::new_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -320,7 +320,7 @@ async fn plugin_list_returns_empty_when_workspace_codex_plugins_disabled() -> Re
         .await;
 
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_without_managed_config_with_env(
+    let mut mcp = AppServerTestProcess::new_without_managed_config_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -411,7 +411,7 @@ async fn plugin_list_reuses_cached_workspace_codex_plugins_setting() -> Result<(
         .await;
 
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_without_managed_config_with_env(
+    let mut mcp = AppServerTestProcess::new_without_managed_config_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -496,7 +496,7 @@ async fn plugin_list_uses_alternate_discoverable_manifest_and_keeps_undiscoverab
     )?;
 
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_with_env(
+    let mut mcp = AppServerTestProcess::new_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -605,7 +605,7 @@ async fn plugin_list_accepts_omitted_cwds() -> Result<()> {
 }"#,
     )?;
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_with_env(
+    let mut mcp = AppServerTestProcess::new_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -665,7 +665,7 @@ async fn plugin_list_returns_share_context_for_shared_local_plugin() -> Result<(
         &AbsolutePathBuf::try_from(plugin_root)?,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -754,7 +754,7 @@ enabled = false
 "#,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -901,7 +901,7 @@ enabled = false
 
     let workspace_default = TempDir::new()?;
     let home = codex_home.path().to_string_lossy().into_owned();
-    let mut mcp = McpProcess::new_with_env(
+    let mut mcp = AppServerTestProcess::new_with_env(
         codex_home.path(),
         &[
             ("HOME", Some(home.as_str())),
@@ -995,7 +995,7 @@ async fn plugin_list_returns_plugin_interface_with_absolute_asset_paths() -> Res
 }"##,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1108,7 +1108,7 @@ async fn plugin_list_accepts_legacy_string_default_prompt() -> Result<()> {
 }"##,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1196,7 +1196,7 @@ enabled = true
 "#,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1299,7 +1299,8 @@ async fn app_server_startup_remote_plugin_sync_runs_once() -> Result<()> {
         .join(STARTUP_REMOTE_PLUGIN_SYNC_MARKER_FILE);
 
     {
-        let mut mcp = McpProcess::new_with_plugin_startup_tasks(codex_home.path()).await?;
+        let mut mcp =
+            AppServerTestProcess::new_with_plugin_startup_tasks(codex_home.path()).await?;
         timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
         wait_for_path_exists(&marker_path).await?;
@@ -1338,7 +1339,8 @@ async fn app_server_startup_remote_plugin_sync_runs_once() -> Result<()> {
     assert!(config.contains(r#"[plugins."linear@openai-curated"]"#));
 
     {
-        let mut mcp = McpProcess::new_with_plugin_startup_tasks(codex_home.path()).await?;
+        let mut mcp =
+            AppServerTestProcess::new_with_plugin_startup_tasks(codex_home.path()).await?;
         timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     }
 
@@ -1379,7 +1381,7 @@ async fn app_server_startup_sync_downloads_remote_installed_plugin_bundles() -> 
     let installed_path = codex_home
         .path()
         .join("plugins/cache/chatgpt-global/linear/1.2.3");
-    let mut mcp = McpProcess::new_with_env_and_plugin_startup_tasks(
+    let mut mcp = AppServerTestProcess::new_with_env_and_plugin_startup_tasks(
         codex_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
@@ -1434,7 +1436,7 @@ async fn plugin_list_sync_upgrades_and_removes_remote_installed_plugin_bundles()
         .join("plugins/cache/chatgpt-global/linear/1.2.3");
     let stale_path = codex_home.path().join("plugins/cache/chatgpt-global/stale");
 
-    let mut mcp = McpProcess::new_with_env(
+    let mut mcp = AppServerTestProcess::new_with_env(
         codex_home.path(),
         &[(TEST_ALLOW_HTTP_REMOTE_PLUGIN_BUNDLE_DOWNLOADS, Some("1"))],
     )
@@ -1598,7 +1600,7 @@ async fn plugin_list_includes_remote_marketplaces_when_remote_plugin_enabled() -
         .mount(&server)
         .await;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1677,7 +1679,7 @@ async fn plugin_list_does_not_append_global_remote_when_marketplace_kinds_are_ex
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1736,7 +1738,7 @@ async fn plugin_list_fetches_workspace_directory_kind_without_remote_plugin_flag
     mount_remote_plugin_list(&server, "WORKSPACE", &workspace_plugin_body).await;
     mount_remote_installed_plugins(&server, "WORKSPACE", &workspace_installed_body).await;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1816,7 +1818,7 @@ async fn plugin_list_fetches_shared_with_me_kind() -> Result<()> {
     mount_shared_workspace_plugins(&server, &shared_plugin_body).await;
     mount_remote_installed_plugins(&server, "WORKSPACE", &workspace_installed_body).await;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -1974,7 +1976,7 @@ async fn plugin_list_marks_remote_plugin_disabled_by_admin() -> Result<()> {
             .await;
     }
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2102,7 +2104,7 @@ async fn plugin_list_remote_marketplace_replaces_local_marketplace_with_same_nam
             .await;
     }
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2161,7 +2163,7 @@ remote_plugin = true
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2197,7 +2199,7 @@ async fn plugin_list_fetches_featured_plugin_ids_without_chatgpt_auth() -> Resul
         .mount(&server)
         .await;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -2236,7 +2238,7 @@ async fn plugin_list_uses_warmed_featured_plugin_ids_cache_on_first_request() ->
         .mount(&server)
         .await;
 
-    let mut mcp = McpProcess::new_with_plugin_startup_tasks(codex_home.path()).await?;
+    let mut mcp = AppServerTestProcess::new_with_plugin_startup_tasks(codex_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
     wait_for_featured_plugin_request_count(&server, /*expected_count*/ 1).await?;
 
