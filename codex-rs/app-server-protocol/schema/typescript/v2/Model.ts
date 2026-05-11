@@ -12,4 +12,8 @@ export type Model = { id: string, model: string, upgrade: string | null, upgrade
 /**
  * Deprecated: use `serviceTiers` instead.
  */
-additionalSpeedTiers: Array<string>, serviceTiers: Array<ModelServiceTier>, isDefault: boolean, };
+additionalSpeedTiers: Array<string>, serviceTiers: Array<ModelServiceTier>,
+/**
+ * Catalog default service tier id for this model. `None` means standard routing.
+ */
+defaultServiceTier: string | null, isDefault: boolean, };

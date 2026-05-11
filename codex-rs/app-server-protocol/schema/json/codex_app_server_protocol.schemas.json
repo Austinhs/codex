@@ -11080,6 +11080,14 @@
           "defaultReasoningEffort": {
             "$ref": "#/definitions/v2/ReasoningEffort"
           },
+          "defaultServiceTier": {
+            "default": null,
+            "description": "Catalog default service tier id for this model. `None` means standard routing.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "description": {
             "type": "string"
           },
