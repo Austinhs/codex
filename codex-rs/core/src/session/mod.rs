@@ -595,6 +595,7 @@ impl Codex {
         let service_tier = get_service_tier(
             config.service_tier.clone(),
             config.notices.fast_default_opt_out.unwrap_or(false),
+            config.features.enabled(Feature::FastMode),
             &model_info,
         );
         let session_configuration = SessionConfiguration {
@@ -798,12 +799,19 @@ impl Codex {
 fn get_service_tier(
     configured_service_tier: Option<String>,
     fast_default_opt_out: bool,
+    fast_mode_enabled: bool,
     model_info: &ModelInfo,
 ) -> Option<String> {
     if fast_default_opt_out && configured_service_tier.is_none() {
         return Some(codex_protocol::openai_models::SERVICE_TIER_UNSET.to_string());
     }
-    model_info.effective_service_tier(configured_service_tier)
+    if fast_mode_enabled {
+        return model_info.effective_service_tier(configured_service_tier);
+    }
+    configured_service_tier.filter(|service_tier| {
+        service_tier == codex_protocol::openai_models::SERVICE_TIER_UNSET
+            || model_info.supports_service_tier(service_tier)
+    })
 }
 
 #[cfg(test)]

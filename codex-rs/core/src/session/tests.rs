@@ -3025,16 +3025,32 @@ fn model_with_default_service_tier(default_service_tier: Option<&str>) -> ModelI
 }
 
 #[test]
-fn get_service_tier_uses_model_default_when_unset() {
+fn get_service_tier_uses_model_default_when_absent_and_fast_mode_enabled() {
     let model_info = model_with_default_service_tier(Some(ServiceTier::Fast.request_value()));
 
     assert_eq!(
         get_service_tier(
             /*configured_service_tier*/ None,
             /*fast_default_opt_out*/ false,
+            /*fast_mode_enabled*/ true,
             &model_info,
         ),
         Some(ServiceTier::Fast.request_value().to_string())
+    );
+}
+
+#[test]
+fn get_service_tier_does_not_use_model_default_when_fast_mode_disabled() {
+    let model_info = model_with_default_service_tier(Some(ServiceTier::Fast.request_value()));
+
+    assert_eq!(
+        get_service_tier(
+            /*configured_service_tier*/ None,
+            /*fast_default_opt_out*/ false,
+            /*fast_mode_enabled*/ false,
+            &model_info,
+        ),
+        None
     );
 }
 
@@ -3046,6 +3062,7 @@ fn get_service_tier_respects_fast_default_opt_out_when_service_tier_unset() {
         get_service_tier(
             /*configured_service_tier*/ None,
             /*fast_default_opt_out*/ true,
+            /*fast_mode_enabled*/ false,
             &model_info,
         ),
         Some(SERVICE_TIER_UNSET.to_string())
@@ -3060,6 +3077,7 @@ fn get_service_tier_stale_fast_default_opt_out_does_not_override_explicit_tier()
         get_service_tier(
             Some(ServiceTier::Fast.request_value().to_string()),
             /*fast_default_opt_out*/ true,
+            /*fast_mode_enabled*/ true,
             &model_info,
         ),
         Some(ServiceTier::Fast.request_value().to_string())
@@ -3074,6 +3092,7 @@ fn get_service_tier_does_not_default_when_model_has_no_default() {
         get_service_tier(
             /*configured_service_tier*/ None,
             /*fast_default_opt_out*/ false,
+            /*fast_mode_enabled*/ true,
             &model_info,
         ),
         None
@@ -3081,13 +3100,14 @@ fn get_service_tier_does_not_default_when_model_has_no_default() {
 }
 
 #[test]
-fn get_service_tier_uses_model_default_for_unsupported_configured_tier() {
+fn get_service_tier_uses_model_default_for_unsupported_configured_tier_when_fast_mode_enabled() {
     let model_info = model_with_default_service_tier(Some(ServiceTier::Fast.request_value()));
 
     assert_eq!(
         get_service_tier(
             Some("unsupported".to_string()),
             /*fast_default_opt_out*/ false,
+            /*fast_mode_enabled*/ true,
             &model_info,
         ),
         Some(ServiceTier::Fast.request_value().to_string())
@@ -3096,9 +3116,25 @@ fn get_service_tier_uses_model_default_for_unsupported_configured_tier() {
         get_service_tier(
             Some(ServiceTier::Flex.request_value().to_string()),
             /*fast_default_opt_out*/ false,
+            /*fast_mode_enabled*/ true,
             &model_info,
         ),
         Some(ServiceTier::Fast.request_value().to_string())
+    );
+}
+
+#[test]
+fn get_service_tier_drops_unsupported_configured_tier_when_fast_mode_disabled() {
+    let model_info = model_with_default_service_tier(Some(ServiceTier::Fast.request_value()));
+
+    assert_eq!(
+        get_service_tier(
+            Some("unsupported".to_string()),
+            /*fast_default_opt_out*/ false,
+            /*fast_mode_enabled*/ false,
+            &model_info,
+        ),
+        None
     );
 }
 

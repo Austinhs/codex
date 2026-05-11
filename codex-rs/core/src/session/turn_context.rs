@@ -522,8 +522,14 @@ impl Session {
         ));
 
         let mut per_turn_config = per_turn_config;
-        per_turn_config.service_tier =
-            model_info.effective_service_tier(per_turn_config.service_tier);
+        per_turn_config.service_tier = if per_turn_config.features.enabled(Feature::FastMode) {
+            model_info.effective_service_tier(per_turn_config.service_tier)
+        } else {
+            per_turn_config.service_tier.filter(|service_tier| {
+                service_tier == codex_protocol::openai_models::SERVICE_TIER_UNSET
+                    || model_info.supports_service_tier(service_tier)
+            })
+        };
         let per_turn_config = Arc::new(per_turn_config);
         let turn_metadata_state = Arc::new(TurnMetadataState::new(
             session_id.to_string(),

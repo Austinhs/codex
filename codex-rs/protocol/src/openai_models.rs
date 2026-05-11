@@ -519,8 +519,9 @@ impl ModelInfo {
     }
 
     pub fn service_tier_for_request(&self, service_tier: Option<String>) -> Option<String> {
-        self.effective_service_tier(service_tier)
-            .filter(|service_tier| service_tier != SERVICE_TIER_UNSET)
+        service_tier.filter(|service_tier| {
+            service_tier != SERVICE_TIER_UNSET && self.supports_service_tier(service_tier)
+        })
     }
 }
 
@@ -909,7 +910,7 @@ mod tests {
     }
 
     #[test]
-    fn service_tier_resolution_uses_catalog_default_when_unset_or_unsupported() {
+    fn service_tier_resolution_uses_catalog_default_when_absent_or_unsupported() {
         let model = ModelInfo {
             default_service_tier: Some(ServiceTier::Fast.request_value().to_string()),
             service_tiers: vec![ModelServiceTier {
@@ -950,6 +951,33 @@ mod tests {
             model.service_tier_for_request(Some(SERVICE_TIER_UNSET.to_string())),
             None
         );
+    }
+
+    #[test]
+    fn service_tier_for_request_filters_local_sentinel_and_unsupported_tiers() {
+        let model = ModelInfo {
+            default_service_tier: Some(ServiceTier::Fast.request_value().to_string()),
+            service_tiers: vec![ModelServiceTier {
+                id: ServiceTier::Fast.request_value().to_string(),
+                name: "Fast".to_string(),
+                description: "Priority processing.".to_string(),
+            }],
+            ..test_model(/*spec*/ None)
+        };
+
+        assert_eq!(
+            model.service_tier_for_request(Some(ServiceTier::Fast.request_value().to_string())),
+            Some(ServiceTier::Fast.request_value().to_string())
+        );
+        assert_eq!(
+            model.service_tier_for_request(Some(SERVICE_TIER_UNSET.to_string())),
+            None
+        );
+        assert_eq!(
+            model.service_tier_for_request(Some("unsupported".to_string())),
+            None
+        );
+        assert_eq!(model.service_tier_for_request(/*service_tier*/ None), None);
     }
 
     #[test]
