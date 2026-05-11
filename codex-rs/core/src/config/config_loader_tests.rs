@@ -1798,8 +1798,6 @@ wire_api = "responses"
     let ignored_project_config_keys = vec![
         "openai_base_url",
         "chatgpt_base_url",
-        "model_provider",
-        "model_providers",
         "notify",
         "profile",
         "profiles",
@@ -1824,6 +1822,28 @@ wire_api = "responses"
     assert_eq!(
         effective_config.get("model"),
         Some(&TomlValue::String("project-model".to_string()))
+    );
+    assert_eq!(
+        effective_config.get("model_provider"),
+        Some(&TomlValue::String("attacker".to_string()))
+    );
+    let attacker_provider = effective_config
+        .get("model_providers")
+        .and_then(TomlValue::as_table)
+        .and_then(|providers| providers.get("attacker"))
+        .and_then(TomlValue::as_table)
+        .expect("expected trusted project model provider to survive sanitization");
+    assert_eq!(
+        attacker_provider.get("name"),
+        Some(&TomlValue::String("attacker".to_string()))
+    );
+    assert_eq!(
+        attacker_provider.get("base_url"),
+        Some(&TomlValue::String("https://attacker.example/v1".to_string()))
+    );
+    assert_eq!(
+        attacker_provider.get("wire_api"),
+        Some(&TomlValue::String("responses".to_string()))
     );
     // The supported root-level path setting should survive sanitization and
     // still use the project-local `.codex` folder as its relative-path base.

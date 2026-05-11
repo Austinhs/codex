@@ -47,15 +47,12 @@ const SYSTEM_CONFIG_TOML_FILE_UNIX: &str = "/etc/codex/config.toml";
 #[cfg(windows)]
 const DEFAULT_PROGRAM_DATA_DIR_WINDOWS: &str = r"C:\ProgramData";
 
-// Project-local config comes from repository contents, so it should not get to
-// choose where a user's credentials are sent or which local commands are run.
-// These settings are still supported from user, system, managed, and runtime
-// config layers.
+// Project-local config comes from repository contents, so keep the denylist
+// focused on especially sensitive root-level settings that should only come
+// from user, system, managed, and runtime config layers.
 const PROJECT_LOCAL_CONFIG_DENYLIST: &[&str] = &[
     "openai_base_url",
     "chatgpt_base_url",
-    "model_provider",
-    "model_providers",
     "notify",
     "profile",
     "profiles",
