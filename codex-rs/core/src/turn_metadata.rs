@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 
 use codex_utils_string::to_ascii_json_string;
 use serde::Serialize;
@@ -21,6 +23,7 @@ use codex_protocol::protocol::ThreadSource;
 use codex_utils_absolute_path::AbsolutePathBuf;
 
 const MODEL_KEY: &str = "model";
+pub(crate) const PRIOR_USER_INPUT_REQUESTED_KEY: &str = "codex_prior_user_input_requested";
 const REASONING_EFFORT_KEY: &str = "reasoning_effort";
 const TURN_STARTED_AT_UNIX_MS_KEY: &str = "turn_started_at_unix_ms";
 
@@ -186,6 +189,7 @@ pub(crate) struct TurnMetadataState {
     enriched_header: Arc<RwLock<Option<String>>>,
     turn_started_at_unix_ms: Arc<RwLock<Option<i64>>>,
     responsesapi_client_metadata: Arc<RwLock<Option<HashMap<String, String>>>>,
+    prior_user_input_requested: Arc<AtomicBool>,
     enrichment_task: Arc<Mutex<Option<JoinHandle<()>>>>,
 }
 
@@ -231,6 +235,7 @@ impl TurnMetadataState {
             enriched_header: Arc::new(RwLock::new(None)),
             turn_started_at_unix_ms: Arc::new(RwLock::new(None)),
             responsesapi_client_metadata: Arc::new(RwLock::new(None)),
+            prior_user_input_requested: Arc::new(AtomicBool::new(false)),
             enrichment_task: Arc::new(Mutex::new(None)),
         }
     }
@@ -285,7 +290,20 @@ impl TurnMetadataState {
                 metadata.remove(REASONING_EFFORT_KEY);
             }
         }
+        if self.prior_user_input_requested.load(Ordering::Relaxed) {
+            metadata.insert(
+                PRIOR_USER_INPUT_REQUESTED_KEY.to_string(),
+                Value::Bool(true),
+            );
+        } else {
+            metadata.remove(PRIOR_USER_INPUT_REQUESTED_KEY);
+        }
         Some(Value::Object(metadata))
+    }
+
+    pub(crate) fn mark_turn_user_input_requested(&self) {
+        self.prior_user_input_requested
+            .store(true, Ordering::Relaxed);
     }
 
     pub(crate) fn set_responsesapi_client_metadata(

@@ -6,6 +6,7 @@ use crate::session::tests::make_session_and_context_with_rx;
 use crate::state::ActiveTurn;
 use crate::test_support::models_manager_with_provider;
 use crate::turn_metadata::McpTurnMetadataContext;
+use crate::turn_metadata::PRIOR_USER_INPUT_REQUESTED_KEY;
 use codex_config::CONFIG_TOML_FILE;
 use codex_config::config_toml::ConfigToml;
 use codex_config::types::AppConfig;
@@ -2555,7 +2556,7 @@ async fn guardian_mode_mcp_denial_returns_rationale_message() {
 
 #[tokio::test]
 async fn prompt_mode_waits_for_approval_when_annotations_do_not_require_approval() {
-    let (session, turn_context, _rx_event) = make_session_and_context_with_rx().await;
+    let (session, turn_context, rx_event) = make_session_and_context_with_rx().await;
     {
         let mut active_turn = session.active_turn.lock().await;
         *active_turn = Some(ActiveTurn::default());
@@ -2597,6 +2598,29 @@ async fn prompt_mode_waits_for_approval_when_annotations_do_not_require_approval
             .await
         })
     };
+
+    tokio::time::timeout(std::time::Duration::from_secs(1), async {
+        loop {
+            let event = rx_event.recv().await.expect("expected event");
+            if matches!(
+                event.msg,
+                EventMsg::RequestUserInput(_) | EventMsg::ElicitationRequest(_)
+            ) {
+                break;
+            }
+        }
+    })
+    .await
+    .expect("MCP approval event timed out");
+
+    let meta = turn_context
+        .turn_metadata_state
+        .current_meta_value_for_mcp_request(mcp_turn_metadata_context(&turn_context))
+        .expect("turn metadata should be present");
+    assert!(
+        meta.get(PRIOR_USER_INPUT_REQUESTED_KEY).is_none(),
+        "current-call MCP approval should not mark prior user input metadata"
+    );
 
     assert!(
         tokio::time::timeout(std::time::Duration::from_millis(200), &mut approval_task)

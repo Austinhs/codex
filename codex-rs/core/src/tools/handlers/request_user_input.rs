@@ -68,6 +68,7 @@ impl ToolHandler for RequestUserInputHandler {
         let args: RequestUserInputArgs = parse_arguments(&arguments)?;
         let args =
             normalize_request_user_input_args(args).map_err(FunctionCallError::RespondToModel)?;
+        turn.turn_metadata_state.mark_turn_user_input_requested();
         let response = session
             .request_user_input(turn.as_ref(), call_id, args)
             .await
